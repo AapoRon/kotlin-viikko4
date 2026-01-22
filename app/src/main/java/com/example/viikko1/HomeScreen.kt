@@ -1,6 +1,8 @@
 package com.example.viikko1
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +22,7 @@ fun HomeScreen(
             .padding(16.dp)
     ) {
 
+        // 🔤 OTSIKKO
         Text(
             text = "Tehtävälista",
             style = MaterialTheme.typography.headlineMedium
@@ -27,7 +30,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ➕ ADD TASK
+        // ➕ UUSI TEHTÄVÄ
         TextField(
             value = newTaskTitle,
             onValueChange = { newTaskTitle = it },
@@ -46,25 +49,68 @@ fun HomeScreen(
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Add task")
+            Text("Lisää tehtävä")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 📋 TASK LISTA
-        tasks.forEach { task ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(task.title)
+        // 🔍 FILTTERI- & JÄRJESTYSPAINIKKEET
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(onClick = { taskViewModel.showAll() }) {
+                Text("Kaikki")
+            }
 
-                Button(onClick = {
-                    taskViewModel.toggleDone(task.id)
-                }) {
-                    Text(if (task.done) "Undo" else "Done")
+            Button(onClick = { taskViewModel.filterByDone(false) }) {
+                Text("Tekemättömät")
+            }
+
+            Button(onClick = { taskViewModel.filterByDone(true) }) {
+                Text("Tehdyt")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { taskViewModel.sortByDueDate() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Järjestä deadline mukaan")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 📋 TEHTÄVÄLISTA
+        LazyColumn {
+            items(tasks) { task ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    Row {
+                        Checkbox(
+                            checked = task.done,
+                            onCheckedChange = {
+                                taskViewModel.toggleDone(task.id)
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(task.title)
+                    }
+
+                    IconButton(onClick = {
+                        taskViewModel.removeTask(task.id)
+                    }) {
+                        Text("🗑️")
+                    }
                 }
             }
         }
