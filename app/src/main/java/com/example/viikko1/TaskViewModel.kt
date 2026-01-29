@@ -1,23 +1,30 @@
-
 package com.example.viikko1
+
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.example.viikko1.domain.*
+import com.example.viikko1.domain.Task
+import com.example.viikko1.domain.mockTasks
 import java.time.LocalDate
-
-
 
 class TaskViewModel : ViewModel() {
 
-    private val allTasks = mutableStateOf(listOf<Task>())
+    // 🔹 kaikki taskit (source of truth)
+    private val allTasks = mutableStateOf(mockTasks)
 
+    // 🔹 UI-tila
     var tasks = mutableStateOf(listOf<Task>())
         private set
 
+    private var currentFilter: Boolean? = null
+    private var sortByDate = false
+
     init {
-        allTasks.value = mockTasks
-        tasks.value = mockTasks
+        applyFilters()
     }
+
+    // ========================
+    // CRUD
+    // ========================
 
     fun addTask(title: String) {
         val newTask = Task(
@@ -30,33 +37,58 @@ class TaskViewModel : ViewModel() {
         )
 
         allTasks.value = allTasks.value + newTask
-        tasks.value = allTasks.value
+        applyFilters()
     }
 
     fun toggleDone(id: Int) {
         allTasks.value = allTasks.value.map {
             if (it.id == id) it.copy(done = !it.done) else it
         }
-        tasks.value = allTasks.value
+        applyFilters()
     }
 
     fun removeTask(id: Int) {
         allTasks.value = allTasks.value.filterNot { it.id == id }
-        tasks.value = allTasks.value
+        applyFilters()
     }
 
-    // 🔍 FILTER
+    // ========================
+    // FILTER & SORT
+    // ========================
+
     fun filterByDone(done: Boolean) {
-        tasks.value = allTasks.value.filter { it.done == done }
+        currentFilter = done
+        applyFilters()
     }
 
-    // 📅 SORT
-    fun sortByDueDate() {
-        tasks.value = tasks.value.sortedBy { it.dueDate }
-    }
-
-    // 🔄 Palauta kaikki
     fun showAll() {
-        tasks.value = allTasks.value
+        currentFilter = null
+        applyFilters()
+    }
+
+    fun sortByDueDate() {
+        sortByDate = true
+        applyFilters()
+    }
+
+    // ========================
+    // MAGIC
+    // ========================
+
+    private fun applyFilters() {
+
+        var result = allTasks.value
+
+        // filter
+        currentFilter?.let { done ->
+            result = result.filter { it.done == done }
+        }
+
+        // sort
+        if (sortByDate) {
+            result = result.sortedBy { it.dueDate }
+        }
+
+        tasks.value = result
     }
 }

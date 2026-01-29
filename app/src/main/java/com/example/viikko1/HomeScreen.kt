@@ -1,20 +1,41 @@
 package com.example.viikko1
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.viikko1.domain.Task
 
 @Composable
 fun HomeScreen(
     taskViewModel: TaskViewModel = viewModel()
 ) {
-    val tasks = taskViewModel.tasks.value
+
+    val tasks: List<Task> = taskViewModel.tasks.value
+
     var newTaskTitle by remember { mutableStateOf("") }
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     Column(
         modifier = Modifier
@@ -22,15 +43,14 @@ fun HomeScreen(
             .padding(16.dp)
     ) {
 
-        // 🔤 OTSIKKO
         Text(
             text = "Tehtävälista",
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // ➕ UUSI TEHTÄVÄ
+        // ➕ Lisää task
         TextField(
             value = newTaskTitle,
             onValueChange = { newTaskTitle = it },
@@ -38,7 +58,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
 
         Button(
             onClick = {
@@ -52,13 +72,14 @@ fun HomeScreen(
             Text("Lisää tehtävä")
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // 🔍 FILTTERI- & JÄRJESTYSPAINIKKEET
+        // 🔘 Filternapit
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+
             Button(onClick = { taskViewModel.showAll() }) {
                 Text("Kaikki")
             }
@@ -72,7 +93,7 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
 
         Button(
             onClick = { taskViewModel.sortByDueDate() },
@@ -81,11 +102,13 @@ fun HomeScreen(
             Text("Järjestä deadline mukaan")
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // 📋 TEHTÄVÄLISTA
+        // 📋 Lista
         LazyColumn {
+
             items(tasks) { task ->
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -101,18 +124,45 @@ fun HomeScreen(
                             }
                         )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(Modifier.width(8.dp))
 
                         Text(task.title)
                     }
 
-                    IconButton(onClick = {
-                        taskViewModel.removeTask(task.id)
-                    }) {
-                        Text("🗑️")
+                    Row {
+
+                        TextButton(onClick = {
+                            selectedTask = task
+                        }) {
+                            Text("Edit")
+                        }
+
+                        TextButton(onClick = {
+                            taskViewModel.removeTask(task.id)
+                        }) {
+                            Text("Poista")
+                        }
                     }
                 }
             }
         }
+    }
+
+    // 🔵 Detail dialog
+    selectedTask?.let { task ->
+
+        DetailDialog(
+            task = task,
+            onDismiss = { selectedTask = null },
+            onSave = { newTitle ->
+                taskViewModel.removeTask(task.id)
+                taskViewModel.addTask(newTitle)
+                selectedTask = null
+            },
+            onDelete = {
+                taskViewModel.removeTask(task.id)
+                selectedTask = null
+            }
+        )
     }
 }
